@@ -1,24 +1,39 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { Clock, ListTodo, BarChart3, Settings as SettingsIcon } from 'lucide-react';
+import { Clock, ListTodo, BarChart3, Settings as SettingsIcon, Maximize2 } from 'lucide-react';
 import { LoginArea } from '@/components/auth/LoginArea';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
+import { PomodoroTimerProvider, usePomodoroTimer } from '@/contexts/PomodoroTimerContext';
 import { PomodoroTimer } from './PomodoroTimer';
 import { TaskList } from './TaskList';
 import { Reports } from './Reports';
 import { Settings } from './Settings';
 import { ProjectManager } from './ProjectManager';
+import { FocusMode } from './FocusMode';
 import { cn } from '@/lib/utils';
 
 interface PomodoroLayoutProps {
   className?: string;
 }
 
-export function PomodoroLayout({ className }: PomodoroLayoutProps) {
+function PomodoroLayoutContent({ className }: PomodoroLayoutProps) {
   const { user } = useCurrentUser();
-  const [selectedTaskId, setSelectedTaskId] = useState<string | undefined>();
+  const { currentTaskId, setCurrentTaskId } = usePomodoroTimer();
   const [activeTab, setActiveTab] = useState('timer');
+  const [isFocusMode, setIsFocusMode] = useState(false);
+
+  // Handle Escape key to exit focus mode
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isFocusMode) {
+        setIsFocusMode(false);
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [isFocusMode]);
 
   if (!user) {
     return (
@@ -72,6 +87,11 @@ export function PomodoroLayout({ className }: PomodoroLayoutProps) {
     );
   }
 
+  // Show focus mode if active
+  if (isFocusMode) {
+    return <FocusMode onExit={() => setIsFocusMode(false)} />;
+  }
+
   return (
     <div className={cn('min-h-screen bg-gradient-to-br from-background via-background to-primary/5', className)}>
       <div className="container max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
@@ -81,7 +101,13 @@ export function PomodoroLayout({ className }: PomodoroLayoutProps) {
               <h1 className="text-3xl sm:text-4xl font-bold tracking-tight">Focus & Achieve</h1>
               <p className="text-muted-foreground">Stay focused and productive with Pomodoro technique</p>
             </div>
-            <LoginArea className="max-w-60" />
+            <div className="flex items-center gap-3">
+              <Button variant="outline" size="sm" onClick={() => setIsFocusMode(true)}>
+                <Maximize2 className="mr-2 h-4 w-4" />
+                Focus Mode
+              </Button>
+              <LoginArea className="max-w-60" />
+            </div>
           </div>
         </header>
 
@@ -108,10 +134,10 @@ export function PomodoroLayout({ className }: PomodoroLayoutProps) {
           <TabsContent value="timer" className="space-y-6">
             <div className="grid gap-6 lg:grid-cols-5">
               <div className="lg:col-span-3 space-y-6">
-                <PomodoroTimer currentTaskId={selectedTaskId} />
-                {selectedTaskId && (
+                <PomodoroTimer />
+                {currentTaskId && (
                   <div className="flex justify-center">
-                    <Button variant="outline" onClick={() => setSelectedTaskId(undefined)}>
+                    <Button variant="outline" onClick={() => setCurrentTaskId(undefined)}>
                       Clear Selected Task
                     </Button>
                   </div>
@@ -119,14 +145,14 @@ export function PomodoroLayout({ className }: PomodoroLayoutProps) {
               </div>
 
               <div className="lg:col-span-2">
-                <TaskList selectedTaskId={selectedTaskId} onTaskSelect={setSelectedTaskId} />
+                <TaskList selectedTaskId={currentTaskId} onTaskSelect={setCurrentTaskId} />
               </div>
             </div>
           </TabsContent>
 
           <TabsContent value="tasks" className="space-y-6">
             <div className="grid gap-6 lg:grid-cols-2">
-              <TaskList selectedTaskId={selectedTaskId} onTaskSelect={setSelectedTaskId} />
+              <TaskList selectedTaskId={currentTaskId} onTaskSelect={setCurrentTaskId} />
               <ProjectManager />
             </div>
           </TabsContent>
@@ -145,5 +171,13 @@ export function PomodoroLayout({ className }: PomodoroLayoutProps) {
         </Tabs>
       </div>
     </div>
+  );
+}
+
+export function PomodoroLayout(props: PomodoroLayoutProps) {
+  return (
+    <PomodoroTimerProvider>
+      <PomodoroLayoutContent {...props} />
+    </PomodoroTimerProvider>
   );
 }

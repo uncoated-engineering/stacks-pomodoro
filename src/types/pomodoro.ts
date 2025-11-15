@@ -10,7 +10,6 @@ export interface PomodoroSettings {
   sessionsUntilLongBreak: number;
   autoStartBreaks: boolean;
   autoStartPomodoros: boolean;
-  theme: string;
   shortcuts: KeyboardShortcuts;
 }
 
@@ -90,7 +89,6 @@ export const DEFAULT_SETTINGS: PomodoroSettings = {
   sessionsUntilLongBreak: 4,
   autoStartBreaks: false,
   autoStartPomodoros: false,
-  theme: 'tomato',
   shortcuts: {
     startTimer: ' ', // space
     pauseTimer: ' ', // space
@@ -99,33 +97,5 @@ export const DEFAULT_SETTINGS: PomodoroSettings = {
     openSettings: ',',
     openTasks: 't',
     openReports: 'h', // h for history
-  },
-};
-
-export const THEME_COLORS = {
-  tomato: {
-    primary: 'hsl(4, 92%, 58%)',
-    primaryDark: 'hsl(4, 92%, 48%)',
-    light: 'hsl(4, 92%, 95%)',
-  },
-  blue: {
-    primary: 'hsl(217, 91%, 60%)',
-    primaryDark: 'hsl(217, 91%, 50%)',
-    light: 'hsl(217, 91%, 95%)',
-  },
-  green: {
-    primary: 'hsl(142, 71%, 45%)',
-    primaryDark: 'hsl(142, 71%, 35%)',
-    light: 'hsl(142, 71%, 95%)',
-  },
-  purple: {
-    primary: 'hsl(271, 76%, 53%)',
-    primaryDark: 'hsl(271, 76%, 43%)',
-    light: 'hsl(271, 76%, 95%)',
-  },
-  pink: {
-    primary: 'hsl(340, 82%, 52%)',
-    primaryDark: 'hsl(340, 82%, 42%)',
-    light: 'hsl(340, 82%, 95%)',
   },
 };

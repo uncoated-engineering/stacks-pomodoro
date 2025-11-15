@@ -6,9 +6,10 @@ import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/useToast';
 import { usePomodoroSettings } from '@/hooks/usePomodoroSettings';
-import { THEME_COLORS } from '@/types/pomodoro';
+import { useTheme } from '@/hooks/useTheme';
 import { cn } from '@/lib/utils';
 
 interface SettingsProps {
@@ -17,6 +18,7 @@ interface SettingsProps {
 
 export function Settings({ className }: SettingsProps) {
   const { settings, updateSettings, isUpdating } = usePomodoroSettings();
+  const { theme, setTheme } = useTheme();
   const { toast } = useToast();
 
   const [workDuration, setWorkDuration] = useState(settings.workDuration);
@@ -25,7 +27,6 @@ export function Settings({ className }: SettingsProps) {
   const [sessionsUntilLongBreak, setSessionsUntilLongBreak] = useState(settings.sessionsUntilLongBreak);
   const [autoStartBreaks, setAutoStartBreaks] = useState(settings.autoStartBreaks);
   const [autoStartPomodoros, setAutoStartPomodoros] = useState(settings.autoStartPomodoros);
-  const [selectedTheme, setSelectedTheme] = useState(settings.theme);
 
   useEffect(() => {
     setWorkDuration(settings.workDuration);
@@ -34,7 +35,6 @@ export function Settings({ className }: SettingsProps) {
     setSessionsUntilLongBreak(settings.sessionsUntilLongBreak);
     setAutoStartBreaks(settings.autoStartBreaks);
     setAutoStartPomodoros(settings.autoStartPomodoros);
-    setSelectedTheme(settings.theme);
   }, [settings]);
 
   const handleSave = async () => {
@@ -46,7 +46,6 @@ export function Settings({ className }: SettingsProps) {
         sessionsUntilLongBreak,
         autoStartBreaks,
         autoStartPomodoros,
-        theme: selectedTheme,
       });
 
       toast({
@@ -67,7 +66,7 @@ export function Settings({ className }: SettingsProps) {
       <Tabs defaultValue="timer" className="w-full">
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="timer">Timer</TabsTrigger>
-          <TabsTrigger value="theme">Theme</TabsTrigger>
+          <TabsTrigger value="appearance">Appearance</TabsTrigger>
           <TabsTrigger value="shortcuts">Shortcuts</TabsTrigger>
         </TabsList>
 
@@ -163,30 +162,28 @@ export function Settings({ className }: SettingsProps) {
           </Card>
         </TabsContent>
 
-        <TabsContent value="theme" className="space-y-4">
+        <TabsContent value="appearance" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Color Theme</CardTitle>
-              <CardDescription>Choose your preferred color scheme</CardDescription>
+              <CardTitle>Appearance</CardTitle>
+              <CardDescription>Customize how the app looks</CardDescription>
             </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                {Object.entries(THEME_COLORS).map(([key, colors]) => (
-                  <button
-                    key={key}
-                    className={cn(
-                      'relative rounded-lg border-2 p-4 transition-all hover:scale-105',
-                      selectedTheme === key ? 'border-primary ring-2 ring-primary/20' : 'border-border'
-                    )}
-                    onClick={() => setSelectedTheme(key)}
-                  >
-                    <div
-                      className="h-12 rounded-md mb-2"
-                      style={{ backgroundColor: colors.primary }}
-                    />
-                    <p className="text-sm font-medium capitalize">{key}</p>
-                  </button>
-                ))}
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="theme">Theme</Label>
+                <Select value={theme} onValueChange={(value) => setTheme(value as 'light' | 'dark' | 'system')}>
+                  <SelectTrigger id="theme">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="light">Light</SelectItem>
+                    <SelectItem value="dark">Dark</SelectItem>
+                    <SelectItem value="system">System</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-sm text-muted-foreground">
+                  Choose between light and dark themes, or use your system preference
+                </p>
               </div>
             </CardContent>
           </Card>
