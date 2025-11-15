@@ -34,7 +34,7 @@ export function AddTaskDialog({ open, onOpenChange }: AddTaskDialogProps) {
 
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [projectId, setProjectId] = useState<string>('');
+  const [projectId, setProjectId] = useState<string | undefined>(undefined);
   const [estimatedPomodoros, setEstimatedPomodoros] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -65,7 +65,7 @@ export function AddTaskDialog({ open, onOpenChange }: AddTaskDialogProps) {
       // Reset form
       setTitle('');
       setDescription('');
-      setProjectId('');
+      setProjectId(undefined);
       setEstimatedPomodoros('');
       onOpenChange(false);
     } catch (error) {
@@ -115,12 +115,16 @@ export function AddTaskDialog({ open, onOpenChange }: AddTaskDialogProps) {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="project">Project</Label>
-                <Select value={projectId} onValueChange={setProjectId} disabled={isCreating}>
+                <Select
+                  value={projectId || 'none'}
+                  onValueChange={(value) => setProjectId(value === 'none' ? undefined : value)}
+                  disabled={isCreating}
+                >
                   <SelectTrigger id="project">
                     <SelectValue placeholder="None" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">None</SelectItem>
+                    <SelectItem value="none">None</SelectItem>
                     {projects.map((project) => (
                       <SelectItem key={project.id} value={project.id}>
                         {project.title}
