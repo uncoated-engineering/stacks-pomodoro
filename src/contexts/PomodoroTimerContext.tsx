@@ -16,6 +16,14 @@ interface PomodoroTimerContextType {
   getSessionLabel: () => string;
 }
 
+interface PersistedTimerState {
+  timerState: TimerState;
+  startTime: number;
+  currentTaskId?: string;
+}
+
+const TIMER_STORAGE_KEY = 'pomodoro-timer-state';
+
 const PomodoroTimerContext = createContext<PomodoroTimerContextType | undefined>(undefined);
 
 export function usePomodoroTimer() {
@@ -31,17 +39,65 @@ export function PomodoroTimerProvider({ children }: { children: ReactNode }) {
   const { createSession } = useSessions();
   const { incrementTaskPomodoros } = useTasks();
 
-  const [currentTaskId, setCurrentTaskId] = useState<string | undefined>();
-  const [timerState, setTimerState] = useState<TimerState>({
-    isRunning: false,
-    isPaused: false,
-    currentSessionType: 'work',
-    timeRemaining: settings.workDuration * 60,
-    sessionsCompleted: 0,
-  });
-
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const startTimeRef = useRef<number>(0);
+
+  // Initialize state from localStorage or defaults
+  const getInitialState = useCallback((): { timerState: TimerState; currentTaskId?: string; startTime: number } => {
+    try {
+      const stored = localStorage.getItem(TIMER_STORAGE_KEY);
+      if (stored) {
+        const parsed: PersistedTimerState = JSON.parse(stored);
+
+        // If timer was running, calculate elapsed time
+        if (parsed.timerState.isRunning && parsed.startTime > 0) {
+          const now = Date.now();
+          const elapsedSeconds = Math.floor((now - parsed.startTime) / 1000);
+          const newTimeRemaining = Math.max(0, parsed.timerState.timeRemaining - elapsedSeconds);
+
+          return {
+            timerState: {
+              ...parsed.timerState,
+              timeRemaining: newTimeRemaining,
+              // If time ran out while page was closed, mark as not running
+              isRunning: newTimeRemaining > 0,
+            },
+            currentTaskId: parsed.currentTaskId,
+            startTime: parsed.startTime,
+          };
+        }
+
+        return {
+          timerState: parsed.timerState,
+          currentTaskId: parsed.currentTaskId,
+          startTime: parsed.startTime,
+        };
+      }
+    } catch (error) {
+      console.error('Failed to load timer state from localStorage:', error);
+    }
+
+    return {
+      timerState: {
+        isRunning: false,
+        isPaused: false,
+        currentSessionType: 'work',
+        timeRemaining: settings.workDuration * 60,
+        sessionsCompleted: 0,
+      },
+      currentTaskId: undefined,
+      startTime: 0,
+    };
+  }, [settings.workDuration]);
+
+  const initialState = getInitialState();
+  const [currentTaskId, setCurrentTaskId] = useState<string | undefined>(initialState.currentTaskId);
+  const [timerState, setTimerState] = useState<TimerState>(initialState.timerState);
+
+  // Update startTimeRef with loaded value
+  useEffect(() => {
+    startTimeRef.current = initialState.startTime;
+  }, [initialState.startTime]);
 
   const getDuration = useCallback(
     (sessionType: SessionType): number => {
@@ -136,6 +192,20 @@ export function PomodoroTimerProvider({ children }: { children: ReactNode }) {
       playNotificationSound,
     ]
   );
+
+  // Persist timer state to localStorage
+  useEffect(() => {
+    try {
+      const persistedState: PersistedTimerState = {
+        timerState,
+        startTime: startTimeRef.current,
+        currentTaskId,
+      };
+      localStorage.setItem(TIMER_STORAGE_KEY, JSON.stringify(persistedState));
+    } catch (error) {
+      console.error('Failed to save timer state to localStorage:', error);
+    }
+  }, [timerState, currentTaskId]);
 
   useEffect(() => {
     if (timerState.isRunning && !timerState.isPaused) {
