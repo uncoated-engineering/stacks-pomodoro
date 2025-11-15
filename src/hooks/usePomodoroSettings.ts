@@ -33,7 +33,15 @@ export function usePomodoroSettings() {
 
       try {
         const content = JSON.parse(events[0].content);
-        return { ...DEFAULT_SETTINGS, ...content } as PomodoroSettings;
+        // Deep merge to ensure shortcuts are properly merged with defaults
+        return {
+          ...DEFAULT_SETTINGS,
+          ...content,
+          shortcuts: {
+            ...DEFAULT_SETTINGS.shortcuts,
+            ...content.shortcuts,
+          },
+        } as PomodoroSettings;
       } catch {
         return DEFAULT_SETTINGS;
       }

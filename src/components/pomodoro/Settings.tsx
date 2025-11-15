@@ -17,7 +17,9 @@ interface SettingsProps {
   className?: string;
 }
 
-function formatShortcut(shortcut: string): string {
+function formatShortcut(shortcut: string | undefined): string {
+  if (!shortcut) return 'Not set';
+
   return shortcut
     .split('+')
     .map((part) => {
