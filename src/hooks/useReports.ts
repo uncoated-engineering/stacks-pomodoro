@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { useSessions } from './useSessions';
 import { useTasks } from './useTasks';
-import type { ActivitySummary, FocusHours } from '@/types/pomodoro';
+import type { ActivitySummary, FocusHours, TaskWorkHistory } from '@/types/pomodoro';
 import { startOfDay, startOfWeek, startOfMonth, startOfYear, format } from 'date-fns';
 
 export function useReports() {
@@ -100,9 +100,42 @@ export function useReports() {
     return Math.round(focusHours.daily[dayKey] || 0);
   };
 
+  const taskWorkHistory = useMemo<TaskWorkHistory[]>(() => {
+    // Group sessions by taskId
+    const taskSessionMap: Record<string, { sessions: number; time: number }> = {};
+
+    sessions
+      .filter((s) => s.sessionType === 'work' && s.completed && s.taskId)
+      .forEach((session) => {
+        const taskId = session.taskId!;
+        if (!taskSessionMap[taskId]) {
+          taskSessionMap[taskId] = { sessions: 0, time: 0 };
+        }
+        taskSessionMap[taskId].sessions += 1;
+        taskSessionMap[taskId].time += session.duration / 60; // convert to minutes
+      });
+
+    // Map to TaskWorkHistory objects
+    const history: TaskWorkHistory[] = Object.entries(taskSessionMap).map(([taskId, data]) => {
+      const task = tasks.find((t) => t.id === taskId);
+      return {
+        taskId,
+        taskTitle: task?.title || 'Unknown Task',
+        projectId: task?.projectId,
+        totalSessions: data.sessions,
+        totalTime: Math.round(data.time),
+        pomodoros: task?.pomodoros || 0,
+      };
+    });
+
+    // Sort by total time (descending)
+    return history.sort((a, b) => b.totalTime - a.totalTime);
+  }, [sessions, tasks]);
+
   return {
     activitySummary,
     focusHours,
+    taskWorkHistory,
     getWeekFocusHours,
     getMonthFocusHours,
     getYearFocusHours,

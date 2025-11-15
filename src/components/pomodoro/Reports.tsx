@@ -3,7 +3,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useReports } from '@/hooks/useReports';
-import { Clock, Target, TrendingUp, Calendar, Flame } from 'lucide-react';
+import { useProjects } from '@/hooks/useProjects';
+import { Clock, Target, TrendingUp, Calendar, Flame, ListChecks } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface ReportsProps {
@@ -13,12 +14,14 @@ interface ReportsProps {
 export function Reports({ className }: ReportsProps) {
   const {
     activitySummary,
+    taskWorkHistory,
     getWeekFocusHours,
     getMonthFocusHours,
     getYearFocusHours,
     getTodayFocusHours,
     isLoading,
   } = useReports();
+  const { projects } = useProjects();
 
   if (isLoading) {
     return (
@@ -175,6 +178,69 @@ export function Reports({ className }: ReportsProps) {
               />
             </TabsContent>
           </Tabs>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <ListChecks className="h-5 w-5" />
+            Task Work History
+          </CardTitle>
+          <CardDescription>Time spent and pomodoros completed per task</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {taskWorkHistory.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              <p>No task work history yet. Start a timer with a task selected to track your progress!</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {taskWorkHistory.map((taskHistory) => {
+                const project = projects.find((p) => p.id === taskHistory.projectId);
+                const hours = Math.floor(taskHistory.totalTime / 60);
+                const minutes = taskHistory.totalTime % 60;
+                const timeDisplay = hours > 0
+                  ? `${hours}h ${minutes}m`
+                  : `${minutes}m`;
+
+                return (
+                  <div
+                    key={taskHistory.taskId}
+                    className="flex items-center justify-between p-4 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
+                  >
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <h4 className="font-medium truncate">{taskHistory.taskTitle}</h4>
+                        {project && (
+                          <Badge
+                            variant="outline"
+                            style={{ borderColor: project.color, color: project.color }}
+                          >
+                            {project.title}
+                          </Badge>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-4 mt-1 text-sm text-muted-foreground">
+                        <span className="flex items-center gap-1">
+                          <Clock className="h-3 w-3" />
+                          {timeDisplay}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <Target className="h-3 w-3" />
+                          {taskHistory.pomodoros} pomodoro{taskHistory.pomodoros !== 1 ? 's' : ''}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="text-right ml-4">
+                      <div className="text-2xl font-bold">{taskHistory.totalSessions}</div>
+                      <div className="text-xs text-muted-foreground">session{taskHistory.totalSessions !== 1 ? 's' : ''}</div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

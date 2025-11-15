@@ -11,9 +11,24 @@ import { useToast } from '@/hooks/useToast';
 import { usePomodoroSettings } from '@/hooks/usePomodoroSettings';
 import { useTheme } from '@/hooks/useTheme';
 import { cn } from '@/lib/utils';
+import type { KeyboardShortcuts } from '@/types/pomodoro';
 
 interface SettingsProps {
   className?: string;
+}
+
+function formatShortcut(shortcut: string): string {
+  return shortcut
+    .split('+')
+    .map((part) => {
+      if (part === 'ctrl') return 'Ctrl';
+      if (part === 'shift') return 'Shift';
+      if (part === 'alt') return 'Alt';
+      if (part === 'space') return 'Space';
+      if (part === ',') return ',';
+      return part.toUpperCase();
+    })
+    .join(' + ');
 }
 
 export function Settings({ className }: SettingsProps) {
@@ -27,6 +42,8 @@ export function Settings({ className }: SettingsProps) {
   const [sessionsUntilLongBreak, setSessionsUntilLongBreak] = useState(settings.sessionsUntilLongBreak);
   const [autoStartBreaks, setAutoStartBreaks] = useState(settings.autoStartBreaks);
   const [autoStartPomodoros, setAutoStartPomodoros] = useState(settings.autoStartPomodoros);
+  const [shortcuts, setShortcuts] = useState<KeyboardShortcuts>(settings.shortcuts);
+  const [recordingShortcut, setRecordingShortcut] = useState<keyof KeyboardShortcuts | null>(null);
 
   useEffect(() => {
     setWorkDuration(settings.workDuration);
@@ -35,7 +52,33 @@ export function Settings({ className }: SettingsProps) {
     setSessionsUntilLongBreak(settings.sessionsUntilLongBreak);
     setAutoStartBreaks(settings.autoStartBreaks);
     setAutoStartPomodoros(settings.autoStartPomodoros);
+    setShortcuts(settings.shortcuts);
   }, [settings]);
+
+  useEffect(() => {
+    if (!recordingShortcut) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+
+      const parts: string[] = [];
+      if (e.ctrlKey || e.metaKey) parts.push('ctrl');
+      if (e.shiftKey) parts.push('shift');
+      if (e.altKey) parts.push('alt');
+
+      const key = e.key === ' ' ? 'space' : e.key.toLowerCase();
+      if (key !== 'control' && key !== 'shift' && key !== 'alt' && key !== 'meta') {
+        parts.push(key);
+        const shortcutString = parts.join('+');
+        setShortcuts((prev) => ({ ...prev, [recordingShortcut]: shortcutString }));
+        setRecordingShortcut(null);
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown, true);
+    return () => document.removeEventListener('keydown', handleKeyDown, true);
+  }, [recordingShortcut]);
 
   const handleSave = async () => {
     try {
@@ -46,6 +89,7 @@ export function Settings({ className }: SettingsProps) {
         sessionsUntilLongBreak,
         autoStartBreaks,
         autoStartPomodoros,
+        shortcuts,
       });
 
       toast({
@@ -60,6 +104,29 @@ export function Settings({ className }: SettingsProps) {
       });
     }
   };
+
+  const ShortcutInput = ({
+    label,
+    shortcutKey,
+  }: {
+    label: string;
+    shortcutKey: keyof KeyboardShortcuts;
+  }) => (
+    <div className="flex items-center justify-between py-2">
+      <span className="text-sm">{label}</span>
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={() => setRecordingShortcut(shortcutKey)}
+        className={cn(
+          'font-mono text-xs min-w-[120px]',
+          recordingShortcut === shortcutKey && 'border-primary ring-2 ring-primary/20'
+        )}
+      >
+        {recordingShortcut === shortcutKey ? 'Press keys...' : formatShortcut(shortcuts[shortcutKey])}
+      </Button>
+    </div>
+  );
 
   return (
     <div className={cn('space-y-6', className)}>
@@ -193,51 +260,25 @@ export function Settings({ className }: SettingsProps) {
           <Card>
             <CardHeader>
               <CardTitle>Keyboard Shortcuts</CardTitle>
-              <CardDescription>Quick actions for better productivity</CardDescription>
+              <CardDescription>
+                Click on a shortcut to record a new key combination
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                <div className="flex items-center justify-between py-2">
-                  <span className="text-sm">Start / Pause Timer</span>
-                  <kbd className="px-2 py-1 text-xs font-semibold text-muted-foreground bg-muted border rounded">
-                    Space
-                  </kbd>
-                </div>
+                <ShortcutInput label="Start / Pause Timer" shortcutKey="startTimer" />
                 <Separator />
-                <div className="flex items-center justify-between py-2">
-                  <span className="text-sm">Reset Timer</span>
-                  <kbd className="px-2 py-1 text-xs font-semibold text-muted-foreground bg-muted border rounded">
-                    R
-                  </kbd>
-                </div>
+                <ShortcutInput label="Reset Timer" shortcutKey="resetTimer" />
                 <Separator />
-                <div className="flex items-center justify-between py-2">
-                  <span className="text-sm">Skip Timer</span>
-                  <kbd className="px-2 py-1 text-xs font-semibold text-muted-foreground bg-muted border rounded">
-                    S
-                  </kbd>
-                </div>
+                <ShortcutInput label="Skip Timer" shortcutKey="skipTimer" />
                 <Separator />
-                <div className="flex items-center justify-between py-2">
-                  <span className="text-sm">Open Settings</span>
-                  <kbd className="px-2 py-1 text-xs font-semibold text-muted-foreground bg-muted border rounded">
-                    ,
-                  </kbd>
-                </div>
+                <ShortcutInput label="Focus Mode" shortcutKey="focusMode" />
                 <Separator />
-                <div className="flex items-center justify-between py-2">
-                  <span className="text-sm">Open Tasks</span>
-                  <kbd className="px-2 py-1 text-xs font-semibold text-muted-foreground bg-muted border rounded">
-                    T
-                  </kbd>
-                </div>
+                <ShortcutInput label="Open Settings" shortcutKey="openSettings" />
                 <Separator />
-                <div className="flex items-center justify-between py-2">
-                  <span className="text-sm">Open Reports</span>
-                  <kbd className="px-2 py-1 text-xs font-semibold text-muted-foreground bg-muted border rounded">
-                    H
-                  </kbd>
-                </div>
+                <ShortcutInput label="Open Tasks" shortcutKey="openTasks" />
+                <Separator />
+                <ShortcutInput label="Open Reports" shortcutKey="openReports" />
               </div>
             </CardContent>
           </Card>

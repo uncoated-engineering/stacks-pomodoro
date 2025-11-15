@@ -5,6 +5,7 @@ import { Clock, ListTodo, BarChart3, Settings as SettingsIcon, Maximize2 } from 
 import { LoginArea } from '@/components/auth/LoginArea';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { PomodoroTimerProvider, usePomodoroTimer } from '@/contexts/PomodoroTimerContext';
+import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { PomodoroTimer } from './PomodoroTimer';
 import { TaskList } from './TaskList';
 import { Reports } from './Reports';
@@ -19,9 +20,29 @@ interface PomodoroLayoutProps {
 
 function PomodoroLayoutContent({ className }: PomodoroLayoutProps) {
   const { user } = useCurrentUser();
-  const { currentTaskId, setCurrentTaskId } = usePomodoroTimer();
+  const { currentTaskId, setCurrentTaskId, timerState, handleStart, handlePause, handleReset, handleSkip } = usePomodoroTimer();
   const [activeTab, setActiveTab] = useState('timer');
   const [isFocusMode, setIsFocusMode] = useState(false);
+
+  // Keyboard shortcuts
+  useKeyboardShortcuts({
+    startTimer: () => {
+      if (!timerState.isRunning || timerState.isPaused) {
+        handleStart();
+      }
+    },
+    pauseTimer: () => {
+      if (timerState.isRunning && !timerState.isPaused) {
+        handlePause();
+      }
+    },
+    resetTimer: handleReset,
+    skipTimer: handleSkip,
+    openSettings: () => setActiveTab('settings'),
+    openTasks: () => setActiveTab('tasks'),
+    openReports: () => setActiveTab('reports'),
+    focusMode: () => setIsFocusMode(true),
+  });
 
   // Handle Escape key to exit focus mode
   useEffect(() => {
