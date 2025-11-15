@@ -1,24 +1,31 @@
+import { useState } from 'react';
 import { useSeoMeta } from '@unhead/react';
-
-// FIXME: Update this page (the content is just a fallback if you fail to update the page)
+import { PomodoroTimer } from '@/components/PomodoroTimer';
+import { TasksDialog } from '@/components/TasksDialog';
+import { SettingsDialog } from '@/components/SettingsDialog';
+import { useNavigate } from 'react-router-dom';
 
 const Index = () => {
+  const [tasksOpen, setTasksOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const navigate = useNavigate();
+
   useSeoMeta({
-    title: 'Welcome to Your Blank App',
-    description: 'A modern Nostr client application built with React, TailwindCSS, and Nostrify.',
+    title: 'Pomodoro Focus Timer - Stay Productive',
+    description: 'A beautiful pomodoro timer with task management, statistics, and Nostr integration.',
   });
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-900">
-      <div className="text-center">
-        <h1 className="text-4xl font-bold mb-4 text-gray-900 dark:text-gray-100">
-          Welcome to Your Blank App
-        </h1>
-        <p className="text-xl text-gray-600 dark:text-gray-400">
-          Start building your amazing project here!
-        </p>
-      </div>
-    </div>
+    <>
+      <PomodoroTimer
+        onOpenSettings={() => setSettingsOpen(true)}
+        onOpenTasks={() => setTasksOpen(true)}
+        onOpenReports={() => navigate('/reports')}
+      />
+
+      <TasksDialog open={tasksOpen} onOpenChange={setTasksOpen} />
+      <SettingsDialog open={settingsOpen} onOpenChange={setSettingsOpen} />
+    </>
   );
 };
 
