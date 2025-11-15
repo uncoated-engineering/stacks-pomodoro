@@ -21,6 +21,7 @@ export interface KeyboardShortcuts {
   openSettings: string;
   openTasks: string;
   openReports: string;
+  focusMode: string;
 }
 
 export interface Project {
@@ -82,6 +83,15 @@ export interface FocusHours {
   yearly: Record<string, number>; // year (YYYY) -> minutes
 }
 
+export interface TaskWorkHistory {
+  taskId: string;
+  taskTitle: string;
+  projectId?: string;
+  totalSessions: number; // number of completed work sessions
+  totalTime: number; // total time in minutes
+  pomodoros: number; // number of pomodoros completed for this task
+}
+
 export const DEFAULT_SETTINGS: PomodoroSettings = {
   workDuration: 25,
   shortBreakDuration: 5,
@@ -90,12 +100,13 @@ export const DEFAULT_SETTINGS: PomodoroSettings = {
   autoStartBreaks: false,
   autoStartPomodoros: false,
   shortcuts: {
-    startTimer: ' ', // space
-    pauseTimer: ' ', // space
-    resetTimer: 'r',
-    skipTimer: 's',
-    openSettings: ',',
-    openTasks: 't',
-    openReports: 'h', // h for history
+    startTimer: 'ctrl+space',
+    pauseTimer: 'ctrl+space',
+    resetTimer: 'ctrl+r',
+    skipTimer: 'ctrl+s',
+    openSettings: 'ctrl+,',
+    openTasks: 'ctrl+t',
+    openReports: 'ctrl+h',
+    focusMode: 'ctrl+f',
   },
 };
